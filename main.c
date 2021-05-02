@@ -3,6 +3,10 @@
 typedef struct node
 {
 	int pid;
+	int quantumTime;
+	int processPriority;
+	int lastRunTime;
+	int arrivalTime;
 	int burstTime;
 	int waitingTime;
 	int turnAroundTime;
