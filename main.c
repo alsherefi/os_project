@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 typedef struct node
 {
@@ -13,18 +14,30 @@ typedef struct node
 	struct node *next;
 }node;
 
-node *head = NULL;
-node *temp = NULL;
-node *p = NULL;
 
 node *createList(int numOfProcesses)
 {
+	node *head = NULL;
+	node *temp = NULL;
+	node *p = NULL;
+	
+	printf("Enter the quantum time: ");
+	scanf("%d", &(temp->quantumTime));
+	
 	for (int i = 0; i < numOfProcesses; i++) {
 		temp = (node *) malloc(sizeof(node));
-		printf("Enter the process ID: ");
+		printf("Enter the process ID [%d]: ", i+1);
 		scanf("%d", &(temp->pid));
-		printf("Enter the burst time ");
+		
+		printf("Enter the arrival time of process [%d]: ", i+1);
+		scanf("%d", &(temp->arrivalTime));
+		
+		printf("Enter the burst time of process [%d]: ", i+1);
 		scanf("%d", &(temp->burstTime));
+		
+		printf("Enter the process priority of process [%d]: ", i+1);
+		scanf("%d", &(temp->processPriority));
+		
 		temp->next = NULL;
 
 		if (head == NULL)
@@ -40,121 +53,172 @@ node *createList(int numOfProcesses)
 	return head;
 }
 
-void FCFS(int numOfProcesses, int burstTime[])
+void FCFS(int numOfProcesses, node *head)
 {
-	int turnAroundTime[numOfProcesses];
-	int waitingTime[numOfProcesses];
+	node *head1 = NULL;
+	node *temp1 = NULL;
+	node *p1 = NULL;
+
+	for (int i = 0; i < numOfProcesses; i++) {
+		temp1 = (node *) malloc(sizeof(node));
+		temp1->pid = head->pid;
+		temp1->burstTime = head->burstTime;
+		temp1->next = NULL;
+
+		if (head1 == NULL)
+			head1 = temp1;
+
+		else {
+			p1 = head1;
+			
+			while (p1->next != NULL)
+				p1 = p1->next;
+
+			p1->next = temp1;
+		}
+	}
+
+	node *i, *j;
+
+	i = head1;
+	j = head1->next;
+
+	i->waitingTime = 0;
+
+	while (j != NULL) {
+		j->waitingTime = i->waitingTime + i->burstTime;
+		i = i->next;
+		j = j->next;
+	}
+
+	i = head1;
+
+	while (i != NULL) {
+		i->turnAroundTime = i->burstTime + i->waitingTime;
+		i = i->next;
+	}
+
+	j = head1;
+
 	int turnAroundTimeSum = 0;
 	int waitingTimeSum = 0;
 
-	waitingTime[0] = 0;
+	while (j != NULL) {
+		turnAroundTimeSum = turnAroundTimeSum + j->turnAroundTime;
+		waitingTimeSum = waitingTimeSum + j->waitingTime;
+		j = j->next;
+	}
 
-	for (int i = 1; i < numOfProcesses; i++)
-		waitingTime[i] = waitingTime[i - 1] + burstTime[i - 1];
-
-	for (int j = 0; j < numOfProcesses; j++)
-		turnAroundTime[j] = burstTime[j] + waitingTime[j];
-
-	for (int k = 0; k < numOfProcesses; k++)
-		turnAroundTimeSum = turnAroundTimeSum + turnAroundTime[k];
-	
 	double turnAroundTimeAvg = turnAroundTimeSum / numOfProcesses;
-	
-	for (int j = 0; j < numOfProcesses; j++)
-		waitingTimeSum = waitingTimeSum + waitingTime[j];
-
 	double waitingTimeAvg = waitingTimeSum / numOfProcesses;
 
 	printf("Process            Burst Time             Waiting Time             Turn Around Time\n\n");
 	
-	for (int k = 0; k < numOfProcesses; k++)
-		printf("Process [%d]          %d                  %d                      %d\n", k+1, burstTime[k], waitingTime[k], turnAroundTime[k]);
+	for (i = head1; i != NULL; i = i->next)
+		printf("Process [%d]          %d                  %d                      %d\n", i->pid, i->burstTime, i->waitingTime, i->turnAroundTime);
 
-	
 	printf("\n\nAverage Waiting Time = %lf\n", waitingTimeAvg);
-	printf("Average Turn Around Time = %lf\n", turnAroundTimeAvg);
+	printf("\n\nAverage Turnaround Time = %lf\n", turnAroundTimeAvg);
 }
 
 void nonPreemtiveSJF(int numOfProcesses, node *head)
 {
-	//float turnAroundTime[numOfProcesses];
-	//float waitingTime[numOfProcesses];
-	int temp1;
-	node *current = head;
-	node *index = NULL;
-	int turnAroundTimeSum = 0;
-	int waitingTimeSum = 0;
+	node *head1 = NULL;
+	node *temp1 = NULL;
+	node *p1 = NULL;
 
-	head->waitingTime = 0;
+	for (int i = 0; i < numOfProcesses; i++) {
+		temp1 = (node *) malloc(sizeof(node));
+		temp1->pid = head->pid;
+		temp1->burstTime = head->burstTime;
+		temp1->next = NULL;
 
-	if (head == NULL)
-		return;
-	else {
-		while (current != NULL) {
-			index = current->next;
+		if (head1 == NULL)
+			head1 = temp1;
 
-			while (index != NULL) {
-				if (current->burstTime > index->burstTime) {
-					temp1 = current->burstTime;
-					current->burstTime = index->burstTime;
-					index->data = temp1;
-				}
+		else {
+			p1 = head1;
+			
+			while (p1->next != NULL)
+				p1 = p1->next;
 
-				index = index->next;
-			}
-
-			current = current->next;
+			p1->next = temp1;
 		}
 	}
 
-	for (int i = 1; i < numOfProcesses; i++)
-		waitingTime[i] = waitingTime[i - 1] + burstTime[i - 1];
+	node *i, *j;
+	int tempPid, tempBurst;
 
-	for (int j = 0; j < numOfProcesses; j++)
-		turnAroundTime[j] = burstTime[j] + waitingTime[j];
+	for (i = head1; i->next != NULL; i = i->next) {
 
-	for (int k = 0; k < numOfProcesses; k++)
-		turnAroundTimeSum = turnAroundTimeSum + turnAroundTime[k];
-	
+		for (j = i->next; j != NULL; j = j->next) {
+
+			if (i->burstTime > j->burstTime) {
+				tempPid = i->pid;
+				tempBurst = i->burstTime;
+
+				i->pid = j->pid;
+				i->burstTime = j->burstTime;
+				
+				j->pid = tempPid;
+				j->burstTime = tempBurst;
+			}
+		}
+	}
+
+	i = head1;
+	j = head1->next;
+
+	i->waitingTime = 0;
+
+	while (j != NULL) {
+		j->waitingTime = i->waitingTime + i->burstTime;
+		i = i->next;
+		j = j->next;
+	}
+
+	i = head1;
+
+	while (i != NULL) {
+		i->turnAroundTime = i->burstTime + i->waitingTime;
+		i = i->next;
+	}
+
+	j = head1;
+
+	int turnAroundTimeSum = 0;
+	int waitingTimeSum = 0;
+
+	while (j != NULL) {
+		turnAroundTimeSum = turnAroundTimeSum + j->turnAroundTime;
+		waitingTimeSum = waitingTimeSum + j->waitingTime;
+		j = j->next;
+	}
+
 	double turnAroundTimeAvg = turnAroundTimeSum / numOfProcesses;
-	
-	for (int j = 0; j < numOfProcesses; j++)
-		waitingTimeSum = waitingTimeSum + waitingTime[j];
-
 	double waitingTimeAvg = waitingTimeSum / numOfProcesses;
 
 	printf("Process            Burst Time             Waiting Time             Turn Around Time\n\n");
 	
-	for (int k = 0; k < numOfProcesses; k++)
-		printf("Process [%d]          %d                  %d                      %d\n", k+1, burstTime[k], waitingTime[k], turnAroundTime[k]);
+	for (i = head1; i != NULL; i = i->next)
+		printf("Process [%d]          %d                  %d                      %d\n", i->pid, i->burstTime, i->waitingTime, i->turnAroundTime);
 
-	
 	printf("\n\nAverage Waiting Time = %lf\n", waitingTimeAvg);
 	printf("Average Turn Around Time = %lf\n", turnAroundTimeAvg);
-
 }
 
 int main()
 {
 	int numOfProcesses;
-	
-	printf("Enter The Number of Processes To Execute: ");
-	scanf("%d", &numOfProcesses);
-
-	float burstTime[numOfProcesses];
-	
-	printf("\n\nEnter The Burst Time of Processes:\n\n");
-
-	for (int i = 0; i < numOfProcesses; i++) {
-		printf("Process [%d]: ", i+1);
-		scanf("%f", &burstTime[i]);
-	}
-
-	printf("\n\n");
-
-	FCFS(numOfProcesses, burstTime);
-
 	node *HEAD = NULL;
+
+	printf("Enter the number of processes: ");
+	scanf("%d", &numOfProcesses);
+	
 	HEAD = createList(numOfProcesses);
+	FCFS(numOfProcesses, HEAD);
+	printf("\n\n");
+	nonPreemtiveSJF(numOfProcesses, HEAD);
+
 	return 0;
 }
