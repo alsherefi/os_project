@@ -14,7 +14,6 @@ typedef struct node
 	struct node *next;
 }node;
 
-
 node *createList(int numOfProcesses)
 {
 	node *head = NULL;
@@ -59,11 +58,14 @@ void FCFS(int numOfProcesses, node *head)
 	node *temp1 = NULL;
 	node *p1 = NULL;
 
+	node *current = head;
+
 	for (int i = 0; i < numOfProcesses; i++) {
 		temp1 = (node *) malloc(sizeof(node));
-		temp1->pid = head->pid;
-		temp1->burstTime = head->burstTime;
+		temp1->pid = current->pid;
+		temp1->burstTime = current->burstTime;
 		temp1->next = NULL;
+		current = current->next;
 
 		if (head1 == NULL)
 			head1 = temp1;
@@ -109,8 +111,8 @@ void FCFS(int numOfProcesses, node *head)
 		j = j->next;
 	}
 
-	double turnAroundTimeAvg = turnAroundTimeSum / numOfProcesses;
-	double waitingTimeAvg = waitingTimeSum / numOfProcesses;
+	double turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
+	double waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
 
 	printf("Process            Burst Time             Waiting Time             Turn Around Time\n\n");
 	
@@ -126,12 +128,14 @@ void nonPreemtiveSJF(int numOfProcesses, node *head)
 	node *head1 = NULL;
 	node *temp1 = NULL;
 	node *p1 = NULL;
+	node *current1 = head;
 
 	for (int i = 0; i < numOfProcesses; i++) {
 		temp1 = (node *) malloc(sizeof(node));
-		temp1->pid = head->pid;
-		temp1->burstTime = head->burstTime;
+		temp1->pid = current1->pid;
+		temp1->burstTime = current1->burstTime;
 		temp1->next = NULL;
+		current1 = current1->next;
 
 		if (head1 == NULL)
 			head1 = temp1;
@@ -195,8 +199,8 @@ void nonPreemtiveSJF(int numOfProcesses, node *head)
 		j = j->next;
 	}
 
-	double turnAroundTimeAvg = turnAroundTimeSum / numOfProcesses;
-	double waitingTimeAvg = waitingTimeSum / numOfProcesses;
+	double turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
+	double waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
 
 	printf("Process            Burst Time             Waiting Time             Turn Around Time\n\n");
 	
@@ -219,6 +223,5 @@ int main()
 	FCFS(numOfProcesses, HEAD);
 	printf("\n\n");
 	nonPreemtiveSJF(numOfProcesses, HEAD);
-
 	return 0;
 }
