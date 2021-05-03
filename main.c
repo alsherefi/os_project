@@ -21,13 +21,13 @@ node *createList(int numOfProcesses)
 	node *temp = NULL;
 	node *p = NULL;
 	
-	printf("Enter the quantum time: ");
-	scanf("%d", &(temp->quantumTime));
-	
 	for (int i = 0; i < numOfProcesses; i++) {
 		temp = (node *) malloc(sizeof(node));
 		printf("Enter the process ID [%d]: ", i+1);
 		scanf("%d", &(temp->pid));
+		
+		printf("Enter the quantum time of process [%d]: ", i+1);
+		scanf("%d", &(temp->quantumTime));
 		
 		printf("Enter the arrival time of process [%d]: ", i+1);
 		scanf("%d", &(temp->arrivalTime));
