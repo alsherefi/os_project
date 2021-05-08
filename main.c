@@ -19,24 +19,37 @@ node *createList(int numOfProcesses)
 	node *head = NULL;
 	node *temp = NULL;
 	node *p = NULL;
+	int n;
 	
+	FILE *myfile = fopen("source.txt", "r");
+	
+	if( myfile == NULL){
+                printf("ERROR: opening file \n");
+                exit(1);
+        }
+
+	int qt;
+	fscanf(myfile, "%d", &qt);
+
 	for (int i = 0; i < numOfProcesses; i++) {
 		temp = (node *) malloc(sizeof(node));
-		printf("Enter the process ID [%d]: ", i+1);
-		scanf("%d", &(temp->pid));
+		//printf("Enter the process ID [%d]: ", i+1);
+		//fscanf(myfile, "%d", &(temp->pid));
+		temp->pid = i;
 		
-		printf("Enter the quantum time of process [%d]: ", i+1);
-		scanf("%d", &(temp->quantumTime));
+		//printf("Enter the quantum time of process [%d]: ", i+1);
+		//fscanf(myfile, "%d", &(temp->quantumTime));
+		temp->quantumTime = qt;
 		
-		printf("Enter the arrival time of process [%d]: ", i+1);
-		scanf("%d", &(temp->arrivalTime));
+		//printf("Enter the arrival time of process [%d]: ", i+1);
+		fscanf(myfile, "%d", &(temp->burstTime));
 		
-		printf("Enter the burst time of process [%d]: ", i+1);
-		scanf("%d", &(temp->burstTime));
+		//printf("Enter the burst time of process [%d]: ", i+1);
+		fscanf(myfile, "%d", &(temp->arrivalTime));
 		
-		printf("Enter the process priority of process [%d]: ", i+1);
-		scanf("%d", &(temp->processPriority));
-		printf("\n");
+		//printf("Enter the process priority of process [%d]: ", i+1);
+		fscanf(myfile, "%d", &(temp->processPriority));
+		//printf("\n");
 
 		temp->next = NULL;
 
@@ -48,7 +61,14 @@ node *createList(int numOfProcesses)
 				p = p->next;
 			p->next = temp;
 		}
-	}
+	}	
+	
+	fclose(myfile);
+	//temp = head;
+	//for(int i = 0; i < numOfProcesses; i++){
+	//	printf("id = %d, qt = %d, at = %d, pp = %d\n\n", temp->pid, temp->quantumTime, temp->arrivalTime, temp->processPriority);
+	//	temp = temp->next;
+	//}
 
 	return head;
 }
