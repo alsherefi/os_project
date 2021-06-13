@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
 
 typedef struct node
 {
 	int pid;
 	int processPriority;
-	int lastRunTime;
 	int arrivalTime;
 	int burstTime;
 	int waitingTime;
@@ -17,6 +18,12 @@ typedef struct node
 int numOfProcesses, quantumTime, turnAroundTimeSum, waitingTimeSum;
 double turnAroundTimeAvg, waitingTimeAvg;
 node *HEAD = NULL;
+
+pthread_mutex_t wtSum_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t tatSum_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t wtAvg_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t tatAvg_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 node *createList()
 {
@@ -63,7 +70,7 @@ node *createList()
 	return head;
 }
 
-void FCFS()
+void *FCFS(void *arg)
 {
 	node *head1 = NULL;
 	node *temp1 = NULL;
@@ -133,9 +140,10 @@ void FCFS()
 
 	printf("\n\nAverage Waiting Time = %lf\n", waitingTimeAvg);
 	printf("\n\nAverage Turnaround Time = %lf\n", turnAroundTimeAvg);
+	printf("\n\n");
 }
 
-void nonPreemtiveSJF()
+void *nonPreemtiveSJF(void *arg)
 {
 	node *head1 = NULL;
 	node *temp1 = NULL;
@@ -223,9 +231,10 @@ void nonPreemtiveSJF()
 
 	printf("\n\nAverage Waiting Time = %lf\n", waitingTimeAvg);
 	printf("Average Turn Around Time = %lf\n", turnAroundTimeAvg);
+	printf("\n\n");
 }
 
-void preSRTF()
+void *preSRTF(void *arg)
 {
 	int arrivalTime[numOfProcesses], burstTime[numOfProcesses], tempBurst[numOfProcesses];
 	int waitingTime[numOfProcesses], turnAroundTime[numOfProcesses], completionTime[numOfProcesses];
@@ -284,9 +293,10 @@ void preSRTF()
 	
 	printf("\n\nAverage waiting time = %lf\n", waitingTimeAvg);
 	printf("Average turnaround time = %lf\n", turnAroundTimeAvg);
+	printf("\n\n");
 }
 
-void priorityNonPre()
+void *priorityNonPre(void *arg)
 {
 	node *head2 = NULL;
 	node *temp2 = NULL;
@@ -378,9 +388,10 @@ void priorityNonPre()
 
 	printf("\n\nAverage Waiting Time = %lf\n", waitingTimeAvg);
 	printf("Average Turn Around Time = %lf\n", turnAroundTimeAvg);
+	printf("\n\n");
 }
 
-void roundRobin()
+void *roundRobin(void *arg)
 {
 	node *head = NULL;
 	node *temp = NULL;
@@ -461,9 +472,10 @@ void roundRobin()
 
 	printf("\n\nAverage Waiting Time = %lf\n", waitingTimeAvg);
 	printf("Average Turn Around Time = %lf\n", turnAroundTimeAvg);
+	printf("\n\n");
 }
 
-void prePriority()
+void *prePriority(void *arg)
 {
 	int arrivalTime[numOfProcesses], burstTime[numOfProcesses], tempBurst[numOfProcesses];
 	int waitingTime[numOfProcesses], turnAroundTime[numOfProcesses], completionTime[numOfProcesses], processPriority[numOfProcesses];
@@ -523,15 +535,32 @@ void prePriority()
 	
 	printf("\n\nAverage waiting time = %lf\n", waitingTimeAvg);
 	printf("Average turnaround time = %lf\n", turnAroundTimeAvg);
+	printf("\n\n");
 }
 
 int main()
 {
+	pthread_t tid[6];
+
 	printf("Enter the number of processes: ");
 	scanf("%d", &numOfProcesses);
 	
 	HEAD = createList();
-	FCFS();
+	pthread_create(&tid[0], NULL, &FCFS, NULL);
+	pthread_create(&tid[1], NULL, &roundRobin, NULL);
+	pthread_create(&tid[2], NULL, &nonPreemtiveSJF, NULL);
+	pthread_create(&tid[3], NULL, &preSRTF, NULL);
+	pthread_create(&tid[4], NULL, &priorityNonPre, NULL);
+	pthread_create(&tid[5], NULL, &prePriority, NULL);
+
+	pthread_join(tid[0], NULL);
+	pthread_join(tid[1], NULL);
+	pthread_join(tid[2], NULL);
+	pthread_join(tid[3], NULL);
+	pthread_join(tid[4], NULL);
+	pthread_join(tid[5], NULL);
+	
+	/*FCFS();
 	printf("\n\n");
 	roundRobin();
 	printf("\n\n");
@@ -541,6 +570,6 @@ int main()
 	printf("\n\n");
 	priorityNonPre();
 	printf("\n\n");
-	prePriority();
+	prePriority();*/
 	return 0;
 }
