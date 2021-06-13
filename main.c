@@ -16,13 +16,10 @@ typedef struct node
 }node;
 
 int numOfProcesses, quantumTime, turnAroundTimeSum, waitingTimeSum;
-double turnAroundTimeAvg, waitingTimeAvg;
 node *HEAD = NULL;
 
 pthread_mutex_t wtSum_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t tatSum_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t wtAvg_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t tatAvg_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 node *createList()
@@ -129,8 +126,8 @@ void *FCFS(void *arg)
 		j = j->next;
 	}
 
-	turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
-	waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
+	double turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
+	double waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
 
 	printf("First Come First Served Scheduling Algorithm\n");
 	printf("Process\t Burst Time\t Waiting Time\t Turn Around Time\n\n");
@@ -219,8 +216,8 @@ void *nonPreemtiveSJF(void *arg)
 		j = j->next;
 	}
 
-	turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
-	waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
+	double turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
+	double waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
 
 	printf("*****************************************************************************************************************\n");
 	printf("Shortest Job First Non-preemtive Scheduling Algorithm\n");
@@ -281,8 +278,8 @@ void *preSRTF(void *arg)
 		turnAroundTimeSum += turnAroundTime[i];
 	}
 
-	waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
-	turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
+	double waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
+	double turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
 
 	printf("*****************************************************************************************************************\n");
 	printf("Shortest Remaining Time Scheduling Algorithm\n");
@@ -376,8 +373,8 @@ void *priorityNonPre(void *arg)
 		j = j->next;
 	}
 
-	turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
-	waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
+	double turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
+	double waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
 
 	printf("*****************************************************************************************************************\n");
 	printf("Non-preemtive Priority Scheduling Algorithm\n");
@@ -467,8 +464,8 @@ void *roundRobin(void *arg)
 		j = j->next;
 	}
 
-	turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
-	waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
+	double turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
+	double waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
 
 	printf("\n\nAverage Waiting Time = %lf\n", waitingTimeAvg);
 	printf("Average Turn Around Time = %lf\n", turnAroundTimeAvg);
@@ -523,8 +520,8 @@ void *prePriority(void *arg)
 		turnAroundTimeSum += turnAroundTime[i];
 	}
 
-	waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
-	turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
+	double waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
+	double turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
 
 	printf("*****************************************************************************************************************\n");
 	printf("Preemtive Priority Scheduling Algorithm\n");
