@@ -25,14 +25,24 @@ pthread_mutex_t tatSum_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t head_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t num_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-node *createList()
+void delete_list(node *nody)
+{
+	int i;
+	node *temp;
+	for (i = 0; i < numOfProcesses && nody != NULL; ++i) {
+		temp = nody;
+		nody = nody->next;
+		free(temp);
+	}
+}
+node *createList(char *fname)
 {
 	node *head = NULL;
 	node *temp = NULL;
 	node *p = NULL;
 	int n;
 	
-	FILE *myfile = fopen("text1.txt", "r");
+	FILE *myfile = fopen(fname, "r");
 	
 	if( myfile == NULL){
                 printf("ERROR: opening file \n");
@@ -100,6 +110,10 @@ void FCFS_algo()
 
 	for (int i = 0; i < mynum; i++) {
 		temp1 = (node *) malloc(sizeof(node));
+		if (temp1 == NULL) {
+			printf("Error in allocating data in FCFS_algo\n");
+			exit(1);
+		}
 		temp1->pid = current->pid;
 		temp1->burstTime = current->burstTime;
 		temp1->next = NULL;
@@ -167,6 +181,7 @@ void FCFS_algo()
 	sec = ((double)time)/CLOCKS_PER_SEC;
 	printf("\n\ntotal Time it took = %lfs\n", sec);
 	printf("\n\n");
+	delete_list(temp1);
 }
 
 void *FCFS(void *arg)
@@ -266,6 +281,7 @@ void *FCFS(void *arg)
 	sec = ((double)time)/CLOCKS_PER_SEC;
 	printf("\n\ntotal Time it took = %lfs\n", sec);
 	printf("\n\n");
+	free(temp1);
 	return 0;
 }
 
@@ -370,6 +386,7 @@ void nonPreemtiveSJF_algo()
 	sec = ((double)time)/CLOCKS_PER_SEC;
 	printf("\n\ntotal Time it took = %lfs\n", sec);
 	printf("\n\n");
+	delete_list(temp1);
 }
 
 void *nonPreemtiveSJF(void *arg)
@@ -489,6 +506,7 @@ void *nonPreemtiveSJF(void *arg)
 	sec = ((double)time)/CLOCKS_PER_SEC;
 	printf("\n\ntotal Time it took = %lfs\n", sec);
 	printf("\n\n");
+	delete_list(temp1);
 	return 0;
 }
 
@@ -751,6 +769,7 @@ void priorityNonPre_algo()
 	sec = ((double)time)/CLOCKS_PER_SEC;
 	printf("\n\ntotal Time it took = %lfs\n", sec);
 	printf("\n\n");
+	free(temp2);
 }
 
 void *priorityNonPre(void *arg)
@@ -873,6 +892,7 @@ void *priorityNonPre(void *arg)
 	sec = ((double)time)/CLOCKS_PER_SEC;
 	printf("\n\ntotal Time it took = %lfs\n", sec);
 	printf("\n\n");
+	free(temp2);
 	return 0;
 }
 
@@ -971,6 +991,7 @@ void roundRobin_algo()
 	sec = ((double)time)/CLOCKS_PER_SEC;
 	printf("\n\ntotal Time it took = %lfs\n", sec);
 	printf("\n\n");
+	free(temp);
 }
 
 void *roundRobin(void *arg)
@@ -1084,6 +1105,7 @@ void *roundRobin(void *arg)
 	sec = ((double)time)/CLOCKS_PER_SEC;
 	printf("\n\ntotal Time it took = %lfs\n", sec);
 	printf("\n\n");
+	free(temp);
 	return 0;
 }
 
@@ -1264,7 +1286,7 @@ void prePriority_algo()
 	printf("\n\n");
 }
 
-int main()
+int main(int argc, char **argv)
 {
 	int outputFD = open("output.txt", O_WRONLY | O_TRUNC | O_CREAT, 0666);
 	if (outputFD == 0) {
@@ -1274,13 +1296,16 @@ int main()
 
 	//dup2(outputFD, STDOUT_FILENO);
 	pthread_t tid[6];
-
-	HEAD = createList();
-	FCFS_algo();
+	if (argc < 2) {
+		printf("Error in argv\n");
+		exit(1);
+	}
+	HEAD = createList(argv[1]);
+	nonPreemtiveSJF_algo();
 	printf("\n\n");
 	roundRobin_algo();
 	printf("\n\n");
-	//nonPreemtiveSJF_algo();
+	FCFS_algo();
 	printf("\n");
 	preSRTF_algo();
 	printf("\n\n");
