@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <time.h>
 #include <fcntl.h>
+#include <string.h>
+#include <limits.h>
 
 typedef struct node
 {
@@ -518,10 +520,12 @@ void preSRTF_algo()
 	int waitingTime[numOfProcesses], turnAroundTime[numOfProcesses], completionTime[numOfProcesses];
 	int i, smallest, time;
 	double endTime;
-	
+	int complete[numOfProcesses];	
 	node *pointer = HEAD;
+	int index;
 	int counter = 0;
 
+	bzero(complete, numOfProcesses);
 
 	int mynum = numOfProcesses;
 
@@ -538,16 +542,19 @@ void preSRTF_algo()
 	burstTime[mynum] = -1;
 
 	for (time = 0; counter != mynum; time++) {
-		smallest = mynum-1;
+		smallest = INT_MAX;
+		index = -1;
 
 		for (i = 0; i < mynum; i++) {
-			if (arrivalTime[i] <= time && burstTime[i] < burstTime[smallest] && burstTime[i])
-				smallest = i;
+			if (arrivalTime[i] <= time && burstTime[i] < smallest && burstTime[i]) {
+				smallest = burstTime[i];
+				index = i;
+			}
 		}
 
-		burstTime[smallest]--;
+		burstTime[index]--;
 
-		if (burstTime[smallest] == 0) {
+		if (burstTime[index] == 0) {
 			counter++;
 			endTime = time+1;
 			completionTime[smallest] = endTime;
