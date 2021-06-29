@@ -19,13 +19,11 @@ typedef struct node
 	struct node *next;
 }node;
 
-int numOfProcesses, quantumTime, turnAroundTimeSum, waitingTimeSum;
+int numOfProcesses, jobs, quantumTime;
 node *HEAD = NULL;
 
-pthread_mutex_t wtSum_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t tatSum_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t head_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t num_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t jobs_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void delete_list(node *nody)
 {
@@ -37,6 +35,7 @@ void delete_list(node *nody)
 		free(temp);
 	}
 }
+
 node *createList(char *fname)
 {
 	node *head = NULL;
@@ -100,8 +99,6 @@ node *createList(char *fname)
 
 void FCFS_algo()
 {
-	clock_t time = clock();
-	double sec = -1;
 	node *head1 = NULL;
 	node *temp1 = NULL;
 	node *p1 = NULL;
@@ -112,10 +109,12 @@ void FCFS_algo()
 
 	for (int i = 0; i < mynum; i++) {
 		temp1 = (node *) malloc(sizeof(node));
+		
 		if (temp1 == NULL) {
 			printf("Error in allocating data in FCFS_algo\n");
 			exit(1);
 		}
+
 		temp1->pid = current->pid;
 		temp1->burstTime = current->burstTime;
 		temp1->next = NULL;
@@ -156,9 +155,9 @@ void FCFS_algo()
 
 	j = head1;
 	
-	turnAroundTimeSum = 0;
+	int turnAroundTimeSum = 0;
 
-	waitingTimeSum = 0;
+	int waitingTimeSum = 0;
 
 	while (j != NULL) {
 		turnAroundTimeSum = turnAroundTimeSum + j->turnAroundTime;
@@ -180,27 +179,25 @@ void FCFS_algo()
 
 	printf("\n\nAverage Waiting Time = %lf\n", waitingTimeAvg);
 	printf("\n\nAverage Turnaround Time = %lf\n", turnAroundTimeAvg);
-	sec = ((double)time)/CLOCKS_PER_SEC;
-	printf("\n\ntotal Time it took = %lfs\n", sec);
 	printf("\n\n");
 	delete_list(temp1);
 }
 
 void *FCFS(void *arg)
 {
-	clock_t time = clock();
-	double sec = -1;
 	node *head1 = NULL;
 	node *temp1 = NULL;
 	node *p1 = NULL;
 
-	pthread_mutex_lock(&head_mutex);
 	node *current = HEAD;
-	pthread_mutex_unlock(&head_mutex);
 	
 	pthread_mutex_lock(&num_mutex);
 	int mynum = numOfProcesses;
 	pthread_mutex_unlock(&num_mutex);
+
+	pthread_mutex_lock(&jobs_mutex);
+	jobs = 0;
+	pthread_mutex_unlock(&jobs_mutex);
 
 	for (int i = 0; i < mynum; i++) {
 		temp1 = (node *) malloc(sizeof(node));
@@ -233,6 +230,9 @@ void *FCFS(void *arg)
 		j->waitingTime = i->waitingTime + i->burstTime;
 		i = i->next;
 		j = j->next;
+		pthread_mutex_lock(&jobs_mutex);
+		printf("Jobs counter update = %d\n", ++jobs);
+		pthread_mutex_unlock(&jobs_mutex);
 	}
 
 	i = head1;
@@ -244,32 +244,17 @@ void *FCFS(void *arg)
 
 	j = head1;
 	
-	pthread_mutex_lock(&tatSum_mutex);
-	turnAroundTimeSum = 0;
-	pthread_mutex_unlock(&tatSum_mutex);
-
-	pthread_mutex_lock(&wtSum_mutex);
-	waitingTimeSum = 0;
-	pthread_mutex_unlock(&wtSum_mutex);
+	int turnAroundTimeSum = 0;
+	int waitingTimeSum = 0;
 
 	while (j != NULL) {
-		pthread_mutex_lock(&tatSum_mutex);
 		turnAroundTimeSum = turnAroundTimeSum + j->turnAroundTime;
-		pthread_mutex_unlock(&tatSum_mutex);
-
-		pthread_mutex_lock(&wtSum_mutex);
 		waitingTimeSum = waitingTimeSum + j->waitingTime;
-		pthread_mutex_unlock(&wtSum_mutex);
 		j = j->next;
 	}
 	
-	pthread_mutex_lock(&tatSum_mutex);
 	double turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
-	pthread_mutex_unlock(&tatSum_mutex);
-
-	pthread_mutex_lock(&wtSum_mutex);
 	double waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
-	pthread_mutex_unlock(&wtSum_mutex);
 
 	printf("*****************************************************************************************************************\n");
 	printf("First Come First Served Scheduling Algorithm in threaded run\n");
@@ -280,17 +265,14 @@ void *FCFS(void *arg)
 
 	printf("\n\nAverage Waiting Time = %lf\n", waitingTimeAvg);
 	printf("\n\nAverage Turnaround Time = %lf\n", turnAroundTimeAvg);
-	sec = ((double)time)/CLOCKS_PER_SEC;
-	printf("\n\ntotal Time it took = %lfs\n", sec);
+	printf("Total number of jobs = %d\n", jobs);
 	printf("\n\n");
-	free(temp1);
+	delete_list(temp1);
 	return 0;
 }
 
 void nonPreemtiveSJF_algo()
 {
-	clock_t time = clock();
-	double sec = -1;
 	node *head1 = NULL;
 	node *temp1 = NULL;
 	node *p1 = NULL;
@@ -360,9 +342,8 @@ void nonPreemtiveSJF_algo()
 
 	j = head1;
 	
-	turnAroundTimeSum = 0;
-
-	waitingTimeSum = 0;
+	int turnAroundTimeSum = 0;
+	int waitingTimeSum = 0;
 
 	while (j != NULL) {
 	
@@ -385,28 +366,23 @@ void nonPreemtiveSJF_algo()
 
 	printf("\n\nAverage Waiting Time = %lf\n", waitingTimeAvg);
 	printf("Average Turn Around Time = %lf\n", turnAroundTimeAvg);
-	sec = ((double)time)/CLOCKS_PER_SEC;
-	printf("\n\ntotal Time it took = %lfs\n", sec);
 	printf("\n\n");
 	delete_list(temp1);
 }
 
 void *nonPreemtiveSJF(void *arg)
 {
-	clock_t time = clock();
-	double sec = -1;
 	node *head1 = NULL;
 	node *temp1 = NULL;
 	node *p1 = NULL;
-	
-	pthread_mutex_lock(&head_mutex);
 	node *current1 = HEAD;
-	pthread_mutex_unlock(&head_mutex);
-
 
 	pthread_mutex_lock(&num_mutex);
 	int mynum = numOfProcesses;
 	pthread_mutex_unlock(&num_mutex);
+	pthread_mutex_lock(&jobs_mutex);
+	jobs = 0;
+	pthread_mutex_unlock(&jobs_mutex);
 
 	for (int i = 0; i < mynum; i++) {
 		temp1 = (node *) malloc(sizeof(node));
@@ -457,6 +433,9 @@ void *nonPreemtiveSJF(void *arg)
 		j->waitingTime = i->waitingTime + i->burstTime;
 		i = i->next;
 		j = j->next;
+		pthread_mutex_lock(&jobs_mutex);
+		printf("Jobs counter update = %d\n", ++jobs);
+		pthread_mutex_unlock(&jobs_mutex);
 	}
 
 	i = head1;
@@ -468,33 +447,17 @@ void *nonPreemtiveSJF(void *arg)
 
 	j = head1;
 	
-	pthread_mutex_lock(&tatSum_mutex);
-	turnAroundTimeSum = 0;
-	pthread_mutex_unlock(&tatSum_mutex);
-
-	pthread_mutex_lock(&wtSum_mutex);
-	waitingTimeSum = 0;
-	pthread_mutex_unlock(&wtSum_mutex);
+	int turnAroundTimeSum = 0;
+	int waitingTimeSum = 0;
 
 	while (j != NULL) {
-	
-		pthread_mutex_lock(&tatSum_mutex);
 		turnAroundTimeSum = turnAroundTimeSum + j->turnAroundTime;
-		pthread_mutex_unlock(&tatSum_mutex);
-
-		pthread_mutex_lock(&wtSum_mutex);
 		waitingTimeSum = waitingTimeSum + j->waitingTime;
-		pthread_mutex_unlock(&wtSum_mutex);
 		j = j->next;
 	}
 
-	pthread_mutex_lock(&tatSum_mutex);
 	double turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
-	pthread_mutex_unlock(&tatSum_mutex);
-
-	pthread_mutex_lock(&wtSum_mutex);
 	double waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
-	pthread_mutex_unlock(&wtSum_mutex);
 
 	printf("*****************************************************************************************************************\n");
 	printf("Shortest Job First Non-preemtive Scheduling Algorithm in threaded run\n");
@@ -505,8 +468,7 @@ void *nonPreemtiveSJF(void *arg)
 
 	printf("\n\nAverage Waiting Time = %lf\n", waitingTimeAvg);
 	printf("Average Turn Around Time = %lf\n", turnAroundTimeAvg);
-	sec = ((double)time)/CLOCKS_PER_SEC;
-	printf("\n\ntotal Time it took = %lfs\n", sec);
+	printf("Total number of jobs = %d\n", jobs);
 	printf("\n\n");
 	delete_list(temp1);
 	return 0;
@@ -514,15 +476,13 @@ void *nonPreemtiveSJF(void *arg)
 
 void preSRTF_algo()
 {
-	clock_t _time = clock();
-	double sec = -1;
 	int arrivalTime[numOfProcesses], burstTime[numOfProcesses + 1], tempBurst[numOfProcesses];
 	int waitingTime[numOfProcesses], turnAroundTime[numOfProcesses], completionTime[numOfProcesses];
 	int i, smallest, time;
 	double endTime;
+	
 	node *pointer = HEAD;
 	int counter = 0;
-
 	int mynum = numOfProcesses;
 
 	for (i = 0; i < mynum; i++) {
@@ -556,7 +516,7 @@ void preSRTF_algo()
 		}
 	}
 
-	waitingTimeSum = 0, turnAroundTimeSum = 0;
+	int waitingTimeSum = 0, turnAroundTimeSum = 0;
 	
 	for (i = 0; i < mynum; i++) {
 		waitingTimeSum += waitingTime[i];
@@ -576,29 +536,25 @@ void preSRTF_algo()
 	
 	printf("\n\nAverage waiting time = %lf\n", waitingTimeAvg);
 	printf("Average turnaround time = %lf\n", turnAroundTimeAvg);
-	sec = ((double)_time)/CLOCKS_PER_SEC;
-	printf("\n\ntotal Time it took = %lfs\n", sec);
 	printf("\n\n");
 }
 
 void *preSRTF(void *arg)
 {
-	clock_t _time = clock();
-	double sec = -1;
-	int arrivalTime[numOfProcesses], burstTime[numOfProcesses], tempBurst[numOfProcesses];
+	int arrivalTime[numOfProcesses], burstTime[numOfProcesses + 1], tempBurst[numOfProcesses];
 	int waitingTime[numOfProcesses], turnAroundTime[numOfProcesses], completionTime[numOfProcesses];
 	int i, smallest, time;
 	double endTime;
 	
-	pthread_mutex_lock(&head_mutex);
 	node *pointer = HEAD;
-	pthread_mutex_unlock(&head_mutex);
 	int counter = 0;
-
 
 	pthread_mutex_lock(&num_mutex);
 	int mynum = numOfProcesses;
 	pthread_mutex_unlock(&num_mutex);
+	pthread_mutex_lock(&jobs_mutex);
+	jobs = 0;
+	pthread_mutex_unlock(&jobs_mutex);
 
 	for (i = 0; i < mynum; i++) {
 		if (pointer != NULL) {
@@ -610,7 +566,7 @@ void *preSRTF(void *arg)
 		}
 	}
 
-	burstTime[mynum] = -1;
+	burstTime[mynum] = INT_MAX;
 
 	for (time = 0; counter != mynum; time++) {
 		smallest = mynum;
@@ -628,27 +584,21 @@ void *preSRTF(void *arg)
 			completionTime[smallest] = endTime;
 			waitingTime[smallest] = endTime - arrivalTime[smallest] - tempBurst[smallest];
 			turnAroundTime[smallest] = endTime - arrivalTime[smallest];	
+			pthread_mutex_lock(&jobs_mutex);
+			printf("Jobs counter update = %d\n", ++jobs);
+			pthread_mutex_unlock(&jobs_mutex);
 		}
 	}
 
-	waitingTimeSum = 0, turnAroundTimeSum = 0;
+	int waitingTimeSum = 0, turnAroundTimeSum = 0;
 	
 	for (i = 0; i < mynum; i++) {
-		pthread_mutex_lock(&wtSum_mutex);
 		waitingTimeSum += waitingTime[i];
-		pthread_mutex_unlock(&wtSum_mutex);
-
-		pthread_mutex_lock(&tatSum_mutex);
 		turnAroundTimeSum += turnAroundTime[i];
-		pthread_mutex_unlock(&tatSum_mutex);
 	}
 
-	pthread_mutex_lock(&wtSum_mutex);
 	double waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
-	pthread_mutex_unlock(&wtSum_mutex);
-	pthread_mutex_lock(&tatSum_mutex);
 	double turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
-	pthread_mutex_unlock(&tatSum_mutex);
 
 	printf("*****************************************************************************************************************\n");
 	printf("Shortest Remaining Time Scheduling Algorithm in threaded run\n");
@@ -659,16 +609,13 @@ void *preSRTF(void *arg)
 	
 	printf("\n\nAverage waiting time = %lf\n", waitingTimeAvg);
 	printf("Average turnaround time = %lf\n", turnAroundTimeAvg);
-	sec = ((double)_time)/CLOCKS_PER_SEC;
-	printf("\n\ntotal Time it took = %lfs\n", sec);
+	printf("Total number of jobs = %d\n", jobs);
 	printf("\n\n");
 	return 0;
 }
 
 void priorityNonPre_algo()
 {
-	clock_t time = clock();
-	double sec = -1;
 	node *head2 = NULL;
 	node *temp2 = NULL;
 	node *p2 = NULL;
@@ -741,9 +688,8 @@ void priorityNonPre_algo()
 
 	j = head2;
 	
-	turnAroundTimeSum = 0;	
-
-	waitingTimeSum = 0;
+	int turnAroundTimeSum = 0;	
+	int waitingTimeSum = 0;
 
 	while (j != NULL) {
 		turnAroundTimeSum = turnAroundTimeSum + j->turnAroundTime;
@@ -766,27 +712,23 @@ void priorityNonPre_algo()
 
 	printf("\n\nAverage Waiting Time = %lf\n", waitingTimeAvg);
 	printf("Average Turn Around Time = %lf\n", turnAroundTimeAvg);
-	sec = ((double)time)/CLOCKS_PER_SEC;
-	printf("\n\ntotal Time it took = %lfs\n", sec);
 	printf("\n\n");
 	delete_list(temp2);
 }
 
 void *priorityNonPre(void *arg)
 {
-	clock_t time = clock();
-	double sec = -1;
 	node *head2 = NULL;
 	node *temp2 = NULL;
 	node *p2 = NULL;
-	pthread_mutex_lock(&head_mutex);
 	node *current2 = HEAD;
-	pthread_mutex_unlock(&head_mutex);
-
 
 	pthread_mutex_lock(&num_mutex);
 	int mynum = numOfProcesses;
 	pthread_mutex_unlock(&num_mutex);
+	pthread_mutex_lock(&jobs_mutex);
+	jobs = 0;
+	pthread_mutex_unlock(&jobs_mutex);
 
 	for (int i = 0; i < mynum; i++) {
 		temp2 = (node *) malloc(sizeof(node));
@@ -841,6 +783,9 @@ void *priorityNonPre(void *arg)
 		j->waitingTime = i->waitingTime + i->burstTime;
 		i = i->next;
 		j = j->next;
+		pthread_mutex_lock(&jobs_mutex);
+		printf("Jobs counter update = %d\n", ++jobs);
+		pthread_mutex_unlock(&jobs_mutex);
 	}
 
 	i = head2;
@@ -852,33 +797,17 @@ void *priorityNonPre(void *arg)
 
 	j = head2;
 	
-	pthread_mutex_lock(&tatSum_mutex);
-	turnAroundTimeSum = 0;	
-	pthread_mutex_unlock(&tatSum_mutex);
-
-	pthread_mutex_lock(&wtSum_mutex);
-	waitingTimeSum = 0;
-	pthread_mutex_unlock(&wtSum_mutex);
+	int turnAroundTimeSum = 0;	
+	int waitingTimeSum = 0;
 
 	while (j != NULL) {
-		pthread_mutex_lock(&tatSum_mutex);
 		turnAroundTimeSum = turnAroundTimeSum + j->turnAroundTime;
-		pthread_mutex_unlock(&tatSum_mutex);
-
-		pthread_mutex_lock(&wtSum_mutex);
 		waitingTimeSum = waitingTimeSum + j->waitingTime;
-		pthread_mutex_unlock(&wtSum_mutex);
 		j = j->next;
 	}
 
-	pthread_mutex_lock(&tatSum_mutex);
 	double turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
-	pthread_mutex_unlock(&tatSum_mutex);
-
-
-	pthread_mutex_lock(&wtSum_mutex);
 	double waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
-	pthread_mutex_unlock(&wtSum_mutex);
 
 	printf("*****************************************************************************************************************\n");
 	printf("Non-preemtive Priority Scheduling Algorithm in threaded run\n");
@@ -889,24 +818,18 @@ void *priorityNonPre(void *arg)
 
 	printf("\n\nAverage Waiting Time = %lf\n", waitingTimeAvg);
 	printf("Average Turn Around Time = %lf\n", turnAroundTimeAvg);
-	sec = ((double)time)/CLOCKS_PER_SEC;
-	printf("\n\ntotal Time it took = %lfs\n", sec);
+	printf("Total number of jobs = %d\n", jobs);
 	printf("\n\n");
-	free(temp2);
+	delete_list(temp2);
 	return 0;
 }
 
 void roundRobin_algo()
 {
-	clock_t time = clock();
-	double sec = -1;
 	node *head = NULL;
 	node *temp = NULL;
 	node *p = NULL;
-	
-	
 	node *current = HEAD;
-
 
 	int mynum = numOfProcesses;
 
@@ -970,10 +893,9 @@ void roundRobin_algo()
 	}
 
 	j = head;
-	turnAroundTimeSum = 0;
 
-	waitingTimeSum = 0;
-
+	int turnAroundTimeSum = 0;
+	int waitingTimeSum = 0;
 
 	while (j != NULL) {
 		turnAroundTimeSum = turnAroundTimeSum + j->turnAroundTime;
@@ -988,29 +910,23 @@ void roundRobin_algo()
 
 	printf("\n\nAverage Waiting Time = %lf\n", waitingTimeAvg);
 	printf("Average Turn Around Time = %lf\n", turnAroundTimeAvg);
-	sec = ((double)time)/CLOCKS_PER_SEC;
-	printf("\n\ntotal Time it took = %lfs\n", sec);
 	printf("\n\n");
-	free(temp);
+	delete_list(temp);
 }
 
 void *roundRobin(void *arg)
 {
-	clock_t time = clock();
-	double sec = -1;
 	node *head = NULL;
 	node *temp = NULL;
 	node *p = NULL;
-	
-	
-	pthread_mutex_lock(&head_mutex);
 	node *current = HEAD;
-	pthread_mutex_unlock(&head_mutex);
-
 
 	pthread_mutex_lock(&num_mutex);
 	int mynum = numOfProcesses;
 	pthread_mutex_unlock(&num_mutex);
+	pthread_mutex_lock(&jobs_mutex);
+	jobs = 0;
+	pthread_mutex_unlock(&jobs_mutex);
 
 	for (int i = 0; i < mynum; i++) {
 		temp = (node *) malloc(sizeof(node));
@@ -1059,6 +975,9 @@ void *roundRobin(void *arg)
 			i->waitingTime = i->waitingTime + total - i->arrivalTime - i->burstTime;
                   	i->turnAroundTime = i->turnAroundTime + total - i->arrivalTime;
                   	counter = 0;
+			pthread_mutex_lock(&jobs_mutex);
+			printf("Jobs counter update = %d\n", ++jobs);
+			pthread_mutex_unlock(&jobs_mutex);
 		}
 
 		if (i->pid == mynum - 1)
@@ -1072,60 +991,43 @@ void *roundRobin(void *arg)
 	}
 
 	j = head;
-	pthread_mutex_lock(&tatSum_mutex);
-	turnAroundTimeSum = 0;
-	pthread_mutex_unlock(&tatSum_mutex);
-
-	pthread_mutex_lock(&wtSum_mutex);
-	waitingTimeSum = 0;
-	pthread_mutex_unlock(&wtSum_mutex);
+	
+	int turnAroundTimeSum = 0;
+	int waitingTimeSum = 0;
 
 
 	while (j != NULL) {
-		pthread_mutex_lock(&tatSum_mutex);
 		turnAroundTimeSum = turnAroundTimeSum + j->turnAroundTime;
-		pthread_mutex_unlock(&tatSum_mutex);
-
-		pthread_mutex_lock(&wtSum_mutex);
 		waitingTimeSum = waitingTimeSum + j->waitingTime;
-		pthread_mutex_unlock(&wtSum_mutex);
 		j = j->next;
 	}
 
-	pthread_mutex_lock(&tatSum_mutex);
 	double turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
-	pthread_mutex_unlock(&tatSum_mutex);
-
-	pthread_mutex_lock(&wtSum_mutex);
 	double waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
-	pthread_mutex_unlock(&wtSum_mutex);
 
 	printf("\n\nAverage Waiting Time = %lf\n", waitingTimeAvg);
 	printf("Average Turn Around Time = %lf\n", turnAroundTimeAvg);
-	sec = ((double)time)/CLOCKS_PER_SEC;
-	printf("\n\ntotal Time it took = %lfs\n", sec);
+	printf("Total number of jobs = %d\n", jobs);
 	printf("\n\n");
-	free(temp);
+	delete_list(temp);
 	return 0;
 }
 
 void *prePriority(void *arg)
 {
-	clock_t _time = clock();
-	double sec = -1;
 	int arrivalTime[numOfProcesses], burstTime[numOfProcesses], tempBurst[numOfProcesses];
-	int waitingTime[numOfProcesses], turnAroundTime[numOfProcesses], completionTime[numOfProcesses], processPriority[numOfProcesses];
+	int waitingTime[numOfProcesses], turnAroundTime[numOfProcesses], completionTime[numOfProcesses], processPriority[numOfProcesses + 1];
 	int i, smallest, time;
 	double endTime;
-	pthread_mutex_lock(&head_mutex);
 	node *pointer = HEAD;
-	pthread_mutex_unlock(&head_mutex);
 	int counter = 0;
-
-
+	
 	pthread_mutex_lock(&num_mutex);
 	int mynum = numOfProcesses;
 	pthread_mutex_unlock(&num_mutex);
+	pthread_mutex_lock(&jobs_mutex);
+	jobs = 0;
+	pthread_mutex_unlock(&jobs_mutex);
 
 	for (i = 0; i < mynum; i++) {
 		if (pointer != NULL) {
@@ -1138,13 +1040,13 @@ void *prePriority(void *arg)
 		}
 	}
 
-	processPriority[mynum] = -1;
+	processPriority[mynum] = INT_MAX;
 
 	for (time = 0; counter != mynum; time++) {
-		smallest = mynum-1;
+		smallest = mynum;
 
 		for (i = 0; i < mynum; i++) {
-			if (arrivalTime[i] <= time && processPriority[i] > processPriority[smallest] && burstTime[i])
+			if (arrivalTime[i] <= time && processPriority[i] < processPriority[smallest] && burstTime[i])
 				smallest = i;
 		}
 
@@ -1156,32 +1058,22 @@ void *prePriority(void *arg)
 			completionTime[smallest] = endTime;
 			waitingTime[smallest] = endTime - arrivalTime[smallest] - tempBurst[smallest];
 			turnAroundTime[smallest] = endTime - arrivalTime[smallest];	
+			pthread_mutex_lock(&jobs_mutex);
+			printf("Jobs counter update = %d\n", ++jobs);
+			pthread_mutex_unlock(&jobs_mutex);
 		}
 	}
 
-	pthread_mutex_lock(&wtSum_mutex);
-	waitingTimeSum = 0;
-	pthread_mutex_unlock(&wtSum_mutex);
-
-	pthread_mutex_lock(&tatSum_mutex);
-	turnAroundTimeSum = 0;
-	pthread_mutex_unlock(&tatSum_mutex);
+	int waitingTimeSum = 0;
+	int turnAroundTimeSum = 0;
 	
 	for (i = 0; i < mynum; i++) {
-		pthread_mutex_lock(&wtSum_mutex);
 		waitingTimeSum += waitingTime[i];
-		pthread_mutex_unlock(&wtSum_mutex);
-		pthread_mutex_lock(&tatSum_mutex);
 		turnAroundTimeSum += turnAroundTime[i];
-		pthread_mutex_unlock(&tatSum_mutex);
 	}
 
-	pthread_mutex_lock(&wtSum_mutex);
 	double waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
-	pthread_mutex_unlock(&wtSum_mutex);
-	pthread_mutex_lock(&tatSum_mutex);
 	double turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
-	pthread_mutex_unlock(&tatSum_mutex);
 
 	printf("*****************************************************************************************************************\n");
 	printf("Preemtive Priority Scheduling Algorithm in threaded run\n");
@@ -1192,30 +1084,19 @@ void *prePriority(void *arg)
 	
 	printf("\n\nAverage waiting time = %lf\n", waitingTimeAvg);
 	printf("Average turnaround time = %lf\n", turnAroundTimeAvg);
-	sec = ((double)_time)/CLOCKS_PER_SEC;
-	printf("\n\ntotal Time it took = %lfs\n", sec);
+	printf("Total number of jobs = %d\n", jobs);
 	printf("\n\n");
-	printf("%s", buf);
 	return 0;
 }
 
 void prePriority_algo()
 {
-	clock_t _time = clock();
-	double sec = -1;
 	int arrivalTime[numOfProcesses], burstTime[numOfProcesses], tempBurst[numOfProcesses];
 	int waitingTime[numOfProcesses], turnAroundTime[numOfProcesses], completionTime[numOfProcesses], processPriority[numOfProcesses + 1];
 	int i, smallest, time;
 	double endTime;
-	//pthread_mutex_lock(&head_mutex);
 	node *pointer = HEAD;
-	//pthread_mutex_unlock(&head_mutex);
 	int counter = 0;
-
-
-	//pthread_mutex_lock(&num_mutex);
-	//int mynum = numOfProcesses;
-	//pthread_mutex_unlock(&num_mutex);
 
 	for (i = 0; i < numOfProcesses; i++) {
 		if (pointer != NULL) {
@@ -1249,29 +1130,16 @@ void prePriority_algo()
 		}
 	}
 
-	//pthread_mutex_lock(&wtSum_mutex);
-	waitingTimeSum = 0;
-	//pthread_mutex_unlock(&wtSum_mutex);
-
-	//pthread_mutex_lock(&tatSum_mutex);
-	turnAroundTimeSum = 0;
-	//pthread_mutex_unlock(&tatSum_mutex);
+	int waitingTimeSum = 0;
+	int turnAroundTimeSum = 0;
 	
 	for (i = 0; i < numOfProcesses; i++) {
-		//pthread_mutex_lock(&wtSum_mutex);
 		waitingTimeSum += waitingTime[i];
-		//pthread_mutex_unlock(&wtSum_mutex);
-		//pthread_mutex_lock(&tatSum_mutex);
 		turnAroundTimeSum += turnAroundTime[i];
-		//pthread_mutex_unlock(&tatSum_mutex);
 	}
 
-	//pthread_mutex_lock(&wtSum_mutex);
 	double waitingTimeAvg = (float)waitingTimeSum / (float)numOfProcesses;
-	//pthread_mutex_unlock(&wtSum_mutex);
-	//pthread_mutex_lock(&tatSum_mutex);
 	double turnAroundTimeAvg = (float)turnAroundTimeSum / (float)numOfProcesses;
-	//pthread_mutex_unlock(&tatSum_mutex);
 
 	printf("*****************************************************************************************************************\n");
 	printf("Preemtive Priority Scheduling Algorithm in sequential run\n");
@@ -1282,8 +1150,6 @@ void prePriority_algo()
 	
 	printf("\n\nAverage waiting time = %lf\n", waitingTimeAvg);
 	printf("Average turnaround time = %lf\n", turnAroundTimeAvg);
-	sec = ((double)_time)/CLOCKS_PER_SEC;
-	printf("\n\ntotal Time it took = %lfs\n", sec);
 	printf("\n\n");
 }
 
@@ -1295,13 +1161,16 @@ int main(int argc, char **argv)
 		exit(0);
 	}
 
-	//dup2(outputFD, STDOUT_FILENO);
+	dup2(outputFD, STDOUT_FILENO);
 	pthread_t tid[6];
 	if (argc < 2) {
 		printf("Error in argv\n");
 		exit(1);
 	}
+
 	HEAD = createList(argv[1]);
+	clock_t _time1 = clock();
+	double sec1 = -1;
 	nonPreemtiveSJF_algo();
 	printf("\n\n");
 	roundRobin_algo();
@@ -1313,7 +1182,10 @@ int main(int argc, char **argv)
 	priorityNonPre_algo();
 	printf("\n\n");
 	prePriority_algo();
+	sec1 = ((double)_time1)/CLOCKS_PER_SEC;
 
+	clock_t _time2 = clock();
+	double sec2 = -1;
 	pthread_create(&tid[0], NULL, &FCFS, NULL);
 	pthread_create(&tid[1], NULL, &roundRobin, NULL);
 	pthread_create(&tid[2], NULL, &nonPreemtiveSJF, NULL);
@@ -1328,5 +1200,11 @@ int main(int argc, char **argv)
 	pthread_join(tid[4], NULL);
 	pthread_join(tid[5], NULL);
 
+	pthread_mutex_destroy(&jobs_mutex);
+	pthread_mutex_destroy(&num_mutex);
+
+	sec2 = ((double)_time2)/CLOCKS_PER_SEC;
+	printf("\n\ntotal Time it took in sequential run = %lfs\n", sec1);
+	printf("\n\ntotal Time it took in threaded run = %lfs\n", sec2);
 	return 0;
 }
