@@ -516,16 +516,12 @@ void preSRTF_algo()
 {
 	clock_t _time = clock();
 	double sec = -1;
-	int arrivalTime[numOfProcesses], burstTime[numOfProcesses], tempBurst[numOfProcesses];
+	int arrivalTime[numOfProcesses], burstTime[numOfProcesses + 1], tempBurst[numOfProcesses];
 	int waitingTime[numOfProcesses], turnAroundTime[numOfProcesses], completionTime[numOfProcesses];
 	int i, smallest, time;
 	double endTime;
-	int complete[numOfProcesses];	
 	node *pointer = HEAD;
-	int index;
 	int counter = 0;
-
-	bzero(complete, numOfProcesses);
 
 	int mynum = numOfProcesses;
 
@@ -539,22 +535,19 @@ void preSRTF_algo()
 		}
 	}
 
-	burstTime[mynum] = -1;
+	burstTime[mynum] = INT_MAX;
 
 	for (time = 0; counter != mynum; time++) {
-		smallest = INT_MAX;
-		index = -1;
+		smallest = mynum;
 
 		for (i = 0; i < mynum; i++) {
-			if (arrivalTime[i] <= time && burstTime[i] < smallest && burstTime[i]) {
-				smallest = burstTime[i];
-				index = i;
-			}
+			if (arrivalTime[i] <= time && burstTime[i] < burstTime[smallest] && burstTime[i]) 
+				smallest = i;
 		}
 
-		burstTime[index]--;
+		burstTime[smallest]--;
 
-		if (burstTime[index] == 0) {
+		if (burstTime[smallest] == 0) {
 			counter++;
 			endTime = time+1;
 			completionTime[smallest] = endTime;
@@ -620,7 +613,7 @@ void *preSRTF(void *arg)
 	burstTime[mynum] = -1;
 
 	for (time = 0; counter != mynum; time++) {
-		smallest = mynum-1;
+		smallest = mynum;
 
 		for (i = 0; i < mynum; i++) {
 			if (arrivalTime[i] <= time && burstTime[i] < burstTime[smallest] && burstTime[i])
@@ -776,7 +769,7 @@ void priorityNonPre_algo()
 	sec = ((double)time)/CLOCKS_PER_SEC;
 	printf("\n\ntotal Time it took = %lfs\n", sec);
 	printf("\n\n");
-	free(temp2);
+	delete_list(temp2);
 }
 
 void *priorityNonPre(void *arg)
@@ -1202,6 +1195,7 @@ void *prePriority(void *arg)
 	sec = ((double)_time)/CLOCKS_PER_SEC;
 	printf("\n\ntotal Time it took = %lfs\n", sec);
 	printf("\n\n");
+	printf("%s", buf);
 	return 0;
 }
 
@@ -1210,7 +1204,7 @@ void prePriority_algo()
 	clock_t _time = clock();
 	double sec = -1;
 	int arrivalTime[numOfProcesses], burstTime[numOfProcesses], tempBurst[numOfProcesses];
-	int waitingTime[numOfProcesses], turnAroundTime[numOfProcesses], completionTime[numOfProcesses], processPriority[numOfProcesses];
+	int waitingTime[numOfProcesses], turnAroundTime[numOfProcesses], completionTime[numOfProcesses], processPriority[numOfProcesses + 1];
 	int i, smallest, time;
 	double endTime;
 	//pthread_mutex_lock(&head_mutex);
@@ -1234,13 +1228,13 @@ void prePriority_algo()
 		}
 	}
 
-	processPriority[numOfProcesses] = -1;
+	processPriority[numOfProcesses] = INT_MAX;
 
 	for (time = 0; counter != numOfProcesses; time++) {
-		smallest = numOfProcesses-1;
+		smallest = numOfProcesses;
 
 		for (i = 0; i < numOfProcesses; i++) {
-			if (arrivalTime[i] <= time && processPriority[i] > processPriority[smallest] && burstTime[i])
+			if (arrivalTime[i] <= time && processPriority[i] < processPriority[smallest] && burstTime[i])
 				smallest = i;
 		}
 
