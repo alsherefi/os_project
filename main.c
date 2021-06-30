@@ -6,6 +6,18 @@
 #include <fcntl.h>
 #include <string.h>
 #include <limits.h>
+#include <sys/time.h>
+
+long double getTime()
+{
+	struct timezone *tzp;
+	struct timeval  *tp;
+
+  	tp  = (struct timeval  *)malloc (sizeof(struct timeval));
+  	tzp = (struct timezone *)malloc (sizeof(struct timezone));
+  	gettimeofday(tp,tzp);
+  	return ( (tp->tv_sec) + (tp->tv_usec*1e-6) );
+}
 
 typedef struct node
 {
@@ -19,10 +31,9 @@ typedef struct node
 	struct node *next;
 }node;
 
-int numOfProcesses, jobs, quantumTime;
+int numOfProcesses, jobs = 0, quantumTime;
 node *HEAD = NULL;
 
-pthread_mutex_t num_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t jobs_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void delete_list(node *nody)
@@ -191,14 +202,8 @@ void *FCFS(void *arg)
 
 	node *current = HEAD;
 	
-	pthread_mutex_lock(&num_mutex);
 	int mynum = numOfProcesses;
-	pthread_mutex_unlock(&num_mutex);
-
-	pthread_mutex_lock(&jobs_mutex);
-	jobs = 0;
-	pthread_mutex_unlock(&jobs_mutex);
-
+	
 	for (int i = 0; i < mynum; i++) {
 		temp1 = (node *) malloc(sizeof(node));
 		temp1->pid = current->pid;
@@ -377,12 +382,7 @@ void *nonPreemtiveSJF(void *arg)
 	node *p1 = NULL;
 	node *current1 = HEAD;
 
-	pthread_mutex_lock(&num_mutex);
 	int mynum = numOfProcesses;
-	pthread_mutex_unlock(&num_mutex);
-	pthread_mutex_lock(&jobs_mutex);
-	jobs = 0;
-	pthread_mutex_unlock(&jobs_mutex);
 
 	for (int i = 0; i < mynum; i++) {
 		temp1 = (node *) malloc(sizeof(node));
@@ -549,12 +549,7 @@ void *preSRTF(void *arg)
 	node *pointer = HEAD;
 	int counter = 0;
 
-	pthread_mutex_lock(&num_mutex);
 	int mynum = numOfProcesses;
-	pthread_mutex_unlock(&num_mutex);
-	pthread_mutex_lock(&jobs_mutex);
-	jobs = 0;
-	pthread_mutex_unlock(&jobs_mutex);
 
 	for (i = 0; i < mynum; i++) {
 		if (pointer != NULL) {
@@ -723,12 +718,7 @@ void *priorityNonPre(void *arg)
 	node *p2 = NULL;
 	node *current2 = HEAD;
 
-	pthread_mutex_lock(&num_mutex);
 	int mynum = numOfProcesses;
-	pthread_mutex_unlock(&num_mutex);
-	pthread_mutex_lock(&jobs_mutex);
-	jobs = 0;
-	pthread_mutex_unlock(&jobs_mutex);
 
 	for (int i = 0; i < mynum; i++) {
 		temp2 = (node *) malloc(sizeof(node));
@@ -921,12 +911,7 @@ void *roundRobin(void *arg)
 	node *p = NULL;
 	node *current = HEAD;
 
-	pthread_mutex_lock(&num_mutex);
 	int mynum = numOfProcesses;
-	pthread_mutex_unlock(&num_mutex);
-	pthread_mutex_lock(&jobs_mutex);
-	jobs = 0;
-	pthread_mutex_unlock(&jobs_mutex);
 
 	for (int i = 0; i < mynum; i++) {
 		temp = (node *) malloc(sizeof(node));
@@ -1022,12 +1007,7 @@ void *prePriority(void *arg)
 	node *pointer = HEAD;
 	int counter = 0;
 	
-	pthread_mutex_lock(&num_mutex);
 	int mynum = numOfProcesses;
-	pthread_mutex_unlock(&num_mutex);
-	pthread_mutex_lock(&jobs_mutex);
-	jobs = 0;
-	pthread_mutex_unlock(&jobs_mutex);
 
 	for (i = 0; i < mynum; i++) {
 		if (pointer != NULL) {
@@ -1155,6 +1135,8 @@ void prePriority_algo()
 
 int main(int argc, char **argv)
 {
+	long double start1, end1, start2, end2, elapse1, elapse2;
+
 	int outputFD = open("output.txt", O_WRONLY | O_TRUNC | O_CREAT, 0666);
 	if (outputFD == 0) {
 		printf("Error in opening the file.\n");
@@ -1169,23 +1151,8 @@ int main(int argc, char **argv)
 	}
 
 	HEAD = createList(argv[1]);
-	clock_t _time1 = clock();
-	double sec1 = -1;
-	nonPreemtiveSJF_algo();
-	printf("\n\n");
-	roundRobin_algo();
-	printf("\n\n");
-	FCFS_algo();
-	printf("\n");
-	preSRTF_algo();
-	printf("\n\n");
-	priorityNonPre_algo();
-	printf("\n\n");
-	prePriority_algo();
-	sec1 = ((double)_time1)/CLOCKS_PER_SEC;
 
-	clock_t _time2 = clock();
-	double sec2 = -1;
+	start1 = getTime();
 	pthread_create(&tid[0], NULL, &FCFS, NULL);
 	pthread_create(&tid[1], NULL, &roundRobin, NULL);
 	pthread_create(&tid[2], NULL, &nonPreemtiveSJF, NULL);
@@ -1201,10 +1168,28 @@ int main(int argc, char **argv)
 	pthread_join(tid[5], NULL);
 
 	pthread_mutex_destroy(&jobs_mutex);
-	pthread_mutex_destroy(&num_mutex);
+	end1 = getTime();
 
-	sec2 = ((double)_time2)/CLOCKS_PER_SEC;
-	printf("\n\ntotal Time it took in sequential run = %lfs\n", sec1);
-	printf("\n\ntotal Time it took in threaded run = %lfs\n", sec2);
+	elapse1 = end1 - start1;
+	
+	start2 = getTime();
+	nonPreemtiveSJF_algo();
+	printf("\n\n");
+	roundRobin_algo();
+	printf("\n\n");
+	FCFS_algo();
+	printf("\n");
+	preSRTF_algo();
+	printf("\n\n");
+	priorityNonPre_algo();
+	printf("\n\n");
+	prePriority_algo();
+	end2 = getTime();
+
+	elapse2 = end2 - start2;
+	
+	printf("\n\ntotal Time it took in sequential run = %Lfs\n", elapse2);
+	printf("Total Time it took in threaded run = %Lfs\n", elapse1);
+	printf("Total number of processed jobs = %d\n", jobs);
 	return 0;
 }
